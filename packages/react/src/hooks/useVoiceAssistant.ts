@@ -1,36 +1,49 @@
 import * as React from 'react';
 import { ConnectionState, ParticipantKind, Track } from 'livekit-client';
 import type { RemoteParticipant } from 'livekit-client';
-import type { ReceivedTranscriptionSegment, TrackReference } from '@livekit/components-core';
+import {
+  ParticipantAgentAttributes,
+  type ReceivedTranscriptionSegment,
+  type TrackReference,
+} from '@livekit/components-core';
 import { useRemoteParticipants } from './useRemoteParticipants';
 import { useParticipantTracks } from './useParticipantTracks';
 import { useTrackTranscription } from './useTrackTranscription';
 import { useConnectionState } from './useConnectionStatus';
 import { useParticipantAttributes } from './useParticipantAttributes';
-
-/**
- * @beta
- */
-export type AgentState =
-  | 'disconnected'
-  | 'connecting'
-  | 'initializing'
-  | 'listening'
-  | 'thinking'
-  | 'speaking';
+import { AgentState } from './useAgent';
 
 /**
  * @beta
  */
 export interface VoiceAssistant {
+  /**
+   * The agent participant.
+   */
   agent: RemoteParticipant | undefined;
+  /**
+   * The current state of the agent.
+   */
   state: AgentState;
+  /**
+   * The microphone track published by the agent or associated avatar worker (if any).
+   */
   audioTrack: TrackReference | undefined;
+  /**
+   * The camera track published by the agent or associated avatar worker (if any).
+   */
+  videoTrack: TrackReference | undefined;
+  /**
+   * The transcriptions of the agent's microphone track (if any).
+   */
   agentTranscriptions: ReceivedTranscriptionSegment[];
+  /**
+   * The agent's participant attributes.
+   */
   agentAttributes: RemoteParticipant['attributes'] | undefined;
 }
 
-const state_attribute = 'lk.agent.state';
+const state_attribute = ParticipantAgentAttributes.AgentState;
 
 /**
  * This hook looks for the first agent-participant in the room.
@@ -42,8 +55,31 @@ const state_attribute = 'lk.agent.state';
  * @beta
  */
 export function useVoiceAssistant(): VoiceAssistant {
-  const agent = useRemoteParticipants().find((p) => p.kind === ParticipantKind.AGENT);
-  const audioTrack = useParticipantTracks([Track.Source.Microphone], agent?.identity)[0];
+  const remoteParticipants = useRemoteParticipants();
+  const agent = remoteParticipants.find(
+    (p) =>
+      p.kind === ParticipantKind.AGENT &&
+      !(ParticipantAgentAttributes.PublishOnBehalf in p.attributes),
+  );
+  const worker = remoteParticipants.find(
+    (p) =>
+      p.kind === ParticipantKind.AGENT &&
+      p.attributes[ParticipantAgentAttributes.PublishOnBehalf] === agent?.identity,
+  );
+  const agentTracks = useParticipantTracks(
+    [Track.Source.Microphone, Track.Source.Camera],
+    agent?.identity,
+  );
+  const workerTracks = useParticipantTracks(
+    [Track.Source.Microphone, Track.Source.Camera],
+    worker?.identity,
+  );
+  const audioTrack =
+    agentTracks.find((t) => t.source === Track.Source.Microphone) ??
+    workerTracks.find((t) => t.source === Track.Source.Microphone);
+  const videoTrack =
+    agentTracks.find((t) => t.source === Track.Source.Camera) ??
+    workerTracks.find((t) => t.source === Track.Source.Camera);
   const { segments: agentTranscriptions } = useTrackTranscription(audioTrack);
   const connectionState = useConnectionState();
   const { attributes } = useParticipantAttributes({ participant: agent });
@@ -66,6 +102,7 @@ export function useVoiceAssistant(): VoiceAssistant {
     agent,
     state,
     audioTrack,
+    videoTrack,
     agentTranscriptions,
     agentAttributes: attributes,
   };

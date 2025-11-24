@@ -1,9 +1,10 @@
 import * as React from 'react';
 import { useBarAnimator } from './animators/useBarAnimator';
 import { useMultibandTrackVolume, type AgentState } from '../../hooks';
-import type { TrackReferenceOrPlaceholder } from '@livekit/components-core';
+import { type TrackReferenceOrPlaceholder } from '@livekit/components-core';
 import { useMaybeTrackRefContext } from '../../context';
 import { cloneSingleChild, mergeProps } from '../../utils';
+import { LocalAudioTrack, RemoteAudioTrack } from 'livekit-client';
 
 /**
  * @beta
@@ -23,7 +24,9 @@ export interface BarVisualizerProps extends React.HTMLProps<HTMLDivElement> {
   state?: AgentState;
   /** Number of bars that show up in the visualizer */
   barCount?: number;
+  /** @deprecated use `track` field instead */
   trackRef?: TrackReferenceOrPlaceholder;
+  track?: TrackReferenceOrPlaceholder | LocalAudioTrack | RemoteAudioTrack;
   options?: BarVisualizerOptions;
   /** The template component to be used in the visualizer. */
   children?: React.ReactNode;
@@ -76,20 +79,48 @@ const getSequencerInterval = (
  *   );
  * }
  * ```
+ *
+ * @example
+ *  Styling the BarVisualizer using CSS classes
+ * ```css
+ * .lk-audio-bar {
+ *  // Styles for "idle" bars
+ *  }
+ * .lk-audio-bar.lk-highlighted {
+ *  // Styles for "active" bars
+ * }
+ * ```
+ *
+ * @example
+ * Styling the BarVisualizer using CSS custom properties
+ * ```css
+ * --lk-fg // for the "active" colour, note that this defines the main foreground colour for the whole "theme"
+ * --lk-va-bg // for "idle" colour
+ * ```
+ *
+ * @example
+ * Using a custom bar template for the BarVisualizer
+ * ```tsx
+ * <BarVisualizer>
+ *   <div className="all the classes" />
+ * </BarVisualizer>
+ * ```
+ * the highlighted children will get a data prop of data-lk-highlighted for them to switch between active and idle bars in their own template bar
  */
 export const BarVisualizer = /* @__PURE__ */ React.forwardRef<HTMLDivElement, BarVisualizerProps>(
   function BarVisualizer(
-    { state, options, barCount = 15, trackRef, children, ...props }: BarVisualizerProps,
+    { state, options, barCount = 15, trackRef, track, children, ...props }: BarVisualizerProps,
     ref,
   ) {
     const elementProps = mergeProps(props, { className: 'lk-audio-bar-visualizer' });
-    let trackReference = useMaybeTrackRefContext();
+    let targetTrack: TrackReferenceOrPlaceholder | LocalAudioTrack | RemoteAudioTrack | undefined =
+      useMaybeTrackRefContext();
 
-    if (trackRef) {
-      trackReference = trackRef;
+    if (trackRef || track) {
+      targetTrack = trackRef || track;
     }
 
-    const volumeBands = useMultibandTrackVolume(trackReference, {
+    const volumeBands = useMultibandTrackVolume(targetTrack, {
       bands: barCount,
       loPass: 100,
       hiPass: 200,
