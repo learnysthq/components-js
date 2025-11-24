@@ -1,4 +1,4 @@
-export * from './components/index.js';
+export * from './components';
 
 export * from './hooks';
 
@@ -17,7 +17,10 @@ export * from './assets/icons/util';
 export { setLogLevel, setLogExtension, isTrackReference } from '@livekit/components-core';
 export type {
   ChatMessage,
+  ReceivedMessage,
   ReceivedChatMessage,
+  ReceivedUserTranscriptionMessage,
+  ReceivedAgentTranscriptionMessage,
   MessageDecoder,
   MessageEncoder,
   LocalUserChoices,
@@ -28,4 +31,5 @@ export type {
   PinState,
   WidgetState,
   GridLayoutDefinition,
+  TextStreamData,
 } from '@livekit/components-core';

@@ -32,3 +32,4 @@ export {
   formatChatMessageLinks,
 } from '../components/ChatEntry';
 export * from './controls/SettingsMenuToggle'; // Added this line by akash
+export * from './SessionProvider';

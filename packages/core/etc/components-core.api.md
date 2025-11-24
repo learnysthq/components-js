@@ -10,7 +10,8 @@ import { ChatMessage } from 'livekit-client';
 import { ConnectionQuality } from 'livekit-client';
 import { ConnectionState } from 'livekit-client';
 import { DataPacket_Kind } from 'livekit-client';
-import type { DataPublishOptions } from 'livekit-client';
+import { DataPublishOptions } from 'livekit-client';
+import { Encryption_Type } from 'livekit-client';
 import { LocalAudioTrack } from 'livekit-client';
 import { LocalParticipant } from 'livekit-client';
 import { LocalVideoTrack } from 'livekit-client';
@@ -27,7 +28,9 @@ import { Room } from 'livekit-client';
 import { RoomEvent } from 'livekit-client';
 import type { RoomEventCallbacks } from 'livekit-client/dist/src/room/Room';
 import type { ScreenShareCaptureOptions } from 'livekit-client';
+import { SendTextOptions } from 'livekit-client';
 import { setLogLevel as setLogLevel_2 } from 'livekit-client';
+import type { TextStreamInfo } from 'livekit-client/dist/src/room/types';
 import { Track } from 'livekit-client';
 import { TrackEvent as TrackEvent_2 } from 'livekit-client';
 import { TrackPublication } from 'livekit-client';
@@ -84,10 +87,7 @@ export type ChatOptions = {
 };
 
 // @public (undocumented)
-export function computeMenuPosition(button: HTMLElement, menu: HTMLElement): Promise<{
-    x: number;
-    y: number;
-}>;
+export function computeMenuPosition(button: HTMLElement, menu: HTMLElement, onUpdate?: (x: number, y: number) => void): () => void;
 
 // @public (undocumented)
 export function connectedParticipantObserver(room: Room, identity: string, options?: ConnectedParticipantObserverOptions): Observable<RemoteParticipant | undefined>;
@@ -115,7 +115,7 @@ export function createChatObserver(room: Room): Observable<[message: ChatMessage
 export function createConnectionQualityObserver(participant: Participant): Observable<ConnectionQuality>;
 
 // @public (undocumented)
-export function createDataObserver(room: Room): Observable<[payload: Uint8Array<ArrayBufferLike>, participant?: RemoteParticipant | undefined, kind?: DataPacket_Kind | undefined, topic?: string | undefined]>;
+export function createDataObserver(room: Room): Observable<[payload: Uint8Array<ArrayBufferLike>, participant?: RemoteParticipant | undefined, kind?: DataPacket_Kind | undefined, topic?: string | undefined, encryptionType?: Encryption_Type | undefined]>;
 
 // @public (undocumented)
 export const createDefaultGrammar: () => {
@@ -156,8 +156,8 @@ export const cssPrefix = "lk";
 
 // @public (undocumented)
 export const DataTopic: {
-    readonly CHAT: "lk-chat-topic";
-    readonly CHAT_UPDATE: "lk-chat-update-topic";
+    readonly CHAT: "lk.chat";
+    readonly TRANSCRIPTION: "lk.transcription";
 };
 
 // @public (undocumented)
@@ -262,13 +262,18 @@ export function isWeb(): boolean;
 // @public (undocumented)
 export interface LegacyChatMessage extends ChatMessage {
     // (undocumented)
-    ignore?: boolean;
+    ignoreLegacy?: boolean;
 }
+
+// @public @deprecated (undocumented)
+export const LegacyDataTopic: {
+    readonly CHAT: "lk-chat-topic";
+};
 
 // @public (undocumented)
 export interface LegacyReceivedChatMessage extends ReceivedChatMessage {
     // (undocumented)
-    ignore?: boolean;
+    ignoreLegacy?: boolean;
 }
 
 // @alpha
@@ -315,6 +320,20 @@ export function observeRoomEvents(room: Room, ...events: RoomEvent[]): Observabl
 
 // @public (undocumented)
 export function observeTrackEvents(track: TrackPublication, ...events: TrackEvent_2[]): Observable<TrackPublication>;
+
+// @public
+export enum ParticipantAgentAttributes {
+    // (undocumented)
+    AgentState = "lk.agent.state",
+    // (undocumented)
+    PublishOnBehalf = "lk.publish_on_behalf",
+    // (undocumented)
+    TranscribedTrackId = "lk.transcribed_track_id",
+    // (undocumented)
+    TranscriptionFinal = "lk.transcription_final",
+    // (undocumented)
+    TranscriptionSegmentId = "lk.segment_id"
+}
 
 // @public (undocumented)
 export function participantAttributesObserver(participant: Participant): Observable<{
@@ -406,11 +425,18 @@ export const PIN_DEFAULT_STATE: PinState;
 // @public (undocumented)
 export type PinState = TrackReferenceOrPlaceholder[];
 
+// Warning: (ae-forgotten-export) The symbol "ReceivedMessageWithType" needs to be exported by the entry point index.d.ts
+//
 // @public (undocumented)
-export interface ReceivedChatMessage extends ChatMessage {
-    // (undocumented)
+export type ReceivedAgentTranscriptionMessage = ReceivedMessageWithType<'agentTranscript', {
+    message: string;
+}>;
+
+// @public (undocumented)
+export type ReceivedChatMessage = ReceivedMessageWithType<'chatMessage', ChatMessage & {
     from?: Participant;
-}
+    attributes?: Record<string, string>;
+}>;
 
 // @public (undocumented)
 export interface ReceivedDataMessage<T extends string | undefined = string> extends BaseDataMessage<T> {
@@ -418,11 +444,19 @@ export interface ReceivedDataMessage<T extends string | undefined = string> exte
     from?: Participant;
 }
 
+// @beta (undocumented)
+export type ReceivedMessage = ReceivedUserTranscriptionMessage | ReceivedAgentTranscriptionMessage | ReceivedChatMessage;
+
 // @public (undocumented)
 export type ReceivedTranscriptionSegment = TranscriptionSegment & {
     receivedAtMediaTimestamp: number;
     receivedAt: number;
 };
+
+// @public (undocumented)
+export type ReceivedUserTranscriptionMessage = ReceivedMessageWithType<'userTranscript', {
+    message: string;
+}>;
 
 // @public (undocumented)
 export function recordingStatusObservable(room: Room): Observable<boolean>;
@@ -474,6 +508,9 @@ export function selectGridLayout(layoutDefinitions: GridLayoutDefinition[], part
 export function sendMessage(localParticipant: LocalParticipant, payload: Uint8Array, options?: DataPublishOptions): Promise<void>;
 
 // @public (undocumented)
+export type SentMessage = ChatMessage;
+
+// @public (undocumented)
 export function setDifference<T>(setA: Set<T>, setB: Set<T>): Set<T>;
 
 // Warning: (ae-forgotten-export) The symbol "LogExtension" needs to be exported by the entry point index.d.ts
@@ -497,24 +534,19 @@ export type SetMediaDeviceOptions = {
 export function setupChat(room: Room, options?: ChatOptions): {
     messageObservable: Observable<ReceivedChatMessage[]>;
     isSendingObservable: BehaviorSubject<boolean>;
-    send: (message: string) => Promise<ChatMessage>;
-    update: (message: string, originalMessageOrId: string | ChatMessage) => Promise<{
-        readonly message: string;
-        readonly editTimestamp: number;
-        readonly id: string;
-        readonly timestamp: number;
-    }>;
+    send: (message: string, options?: SendTextOptions) => Promise<ReceivedChatMessage>;
 };
 
 // @public (undocumented)
 export function setupChatMessageHandler(room: Room): {
     chatObservable: Observable<[message: ChatMessage, participant?: LocalParticipant | RemoteParticipant | undefined]>;
-    send: (text: string) => Promise<ChatMessage>;
+    send: (text: string, options: SendTextOptions) => Promise<ReceivedChatMessage>;
     edit: (text: string, originalMsg: ChatMessage) => Promise<{
         readonly message: string;
         readonly editTimestamp: number;
         readonly id: string;
         readonly timestamp: number;
+        readonly attachedFiles?: Array<File>;
     }>;
 };
 
@@ -621,6 +653,9 @@ export function setupStartVideo(): {
 };
 
 // @public (undocumented)
+export function setupTextStream(room: Room, topic: string): Observable<TextStreamData[]>;
+
+// @public (undocumented)
 export function setupTrackMutedIndicator(trackRef: TrackReferenceOrPlaceholder): {
     className: string;
     mediaMutedObserver: Observable<boolean>;
@@ -637,6 +672,18 @@ export type SourcesArray = Track.Source[] | TrackSourceWithOptions[];
 
 // @public
 export function supportsScreenSharing(): boolean;
+
+// @public (undocumented)
+export interface TextStreamData {
+    // (undocumented)
+    participantInfo: {
+        identity: string;
+    };
+    // (undocumented)
+    streamInfo: TextStreamInfo;
+    // (undocumented)
+    text: string;
+}
 
 // @public (undocumented)
 export type ToggleSource = Exclude<Track.Source, Track.Source.ScreenShareAudio | Track.Source.Unknown>;

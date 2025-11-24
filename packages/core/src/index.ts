@@ -4,6 +4,7 @@ export * from './helper';
 export * from './types';
 export * from './sorting';
 export * from './track-reference';
+export * from './messages';
 
 export * from './components/mediaToggle';
 export * from './components/mediaDeviceSelect';
@@ -29,5 +30,7 @@ export * from './observables/dataChannel';
 export * from './observables/dom-event';
 
 export * from './persistent-storage';
+
+export * from './components/textStream';
 
 export { log, setLogLevel, setLogExtension } from './logger';

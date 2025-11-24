@@ -14,6 +14,7 @@ import { useTrackSyncTime } from './useTrackSyncTime';
 
 /**
  * @alpha
+ * @deprecated Use useTranscription instead
  */
 export interface TrackTranscriptionOptions {
   /**
@@ -35,8 +36,9 @@ const TRACK_TRANSCRIPTION_DEFAULTS = {
 } as const satisfies TrackTranscriptionOptions;
 
 /**
- * @returns An object consisting of `segments` with maximum length of opts.windowLength and `activeSegments` that are valid for the current track timestamp
+ * @returns An object consisting of `segments` with maximum length of opts.bufferSize
  * @alpha
+ * @deprecated Use useTranscription instead
  */
 export function useTrackTranscription(
   trackRef: TrackReferenceOrPlaceholder | undefined,
@@ -44,10 +46,7 @@ export function useTrackTranscription(
 ) {
   const opts = { ...TRACK_TRANSCRIPTION_DEFAULTS, ...options };
   const [segments, setSegments] = React.useState<Array<ReceivedTranscriptionSegment>>([]);
-  // const [activeSegments, setActiveSegments] = React.useState<Array<ReceivedTranscriptionSegment>>(
-  //   [],
-  // );
-  // const prevActiveSegments = React.useRef<ReceivedTranscriptionSegment[]>([]);
+
   const syncTimestamps = useTrackSyncTime(trackRef);
   const handleSegmentMessage = (newSegments: TranscriptionSegment[]) => {
     opts.onTranscription?.(newSegments);
@@ -71,21 +70,6 @@ export function useTrackTranscription(
       subscription.unsubscribe();
     };
   }, [trackRef && getTrackReferenceId(trackRef), handleSegmentMessage]);
-
-  // React.useEffect(() => {
-  //   if (syncTimestamps) {
-  //     const newActiveSegments = getActiveTranscriptionSegments(
-  //       segments,
-  //       syncTimestamps,
-  //       opts.maxAge,
-  //     );
-  //     // only update active segment array if content actually changed
-  //     if (didActiveSegmentsChange(prevActiveSegments.current, newActiveSegments)) {
-  //       setActiveSegments(newActiveSegments);
-  //       prevActiveSegments.current = newActiveSegments;
-  //     }
-  //   }
-  // }, [syncTimestamps, segments, opts.maxAge]);
 
   return { segments };
 }
