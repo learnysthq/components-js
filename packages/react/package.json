@@ -1,11 +1,11 @@
 {
-  "name": "@learnystHqLivekit/components-react",
-  "version": "2.6.11-lstlive.2",
+  "name": "@sridhardvvce/components-react",
+  "version": "2.9.16-lstlive.1",
   "license": "Apache-2.0",
   "author": "LiveKit",
   "repository": {
     "type": "git",
-    "url": "https://github.com/livekit/components-js.git",
+    "url": "https://github.com/learnysthq/components-js.git",
     "directory": "/packages/react"
   },
   "exports": {
